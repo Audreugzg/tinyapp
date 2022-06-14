@@ -23,10 +23,22 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
+});
+//Make sure to place this code above the app.get("/urls/:id", ...) route definition
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+
+
+app.get("/urls/:shortURL", (req, res) => {
+  let shortURL = req.params.shortURL;
+  let longURL = urlDatabase[shortURL];
+  const templateVars = { shortURL: shortURL, longURL: longURL };
+  res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
@@ -36,26 +48,11 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-//Make sure to place this code above the app.get("/urls/:id", ...) route definition
-app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
-});
-
-app.get("/urls/:shortURL", (req, res) => {
-  let shortURL = req.params.shortURL;
-  let longURL = urlDatabase[shortURL];
-  const templateVars = { shortURL: shortURL, longURL: longURL };
-  res.render("urls_show", templateVars);
-});
-
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   let longURL = urlDatabase[shortURL];
   res.redirect(longURL);
 });
-
-
-
 
 
 app.listen(PORT, () => {
