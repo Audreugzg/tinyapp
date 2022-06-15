@@ -30,12 +30,12 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+  const templateVars = { urls: urlDatabase, user: users, user_id: req.cookies["user_id"]}
   res.render("urls_index", templateVars);
 });
 //Make sure to place this code above the app.get("/urls/:id", ...) route definition
 app.get("/urls/new", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+  const templateVars = { urls: urlDatabase, user: users, user_id: req.cookies["user_id"]};
   res.render("urls_new",templateVars);
 });
 
@@ -43,7 +43,7 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
-  const templateVars = { shortURL: shortURL, longURL: longURL, username: req.cookies["username"]};
+  const templateVars = { urls: urlDatabase, user: users, user_id: req.cookies["user_id"]};
   res.render("urls_show", templateVars);
 });
 
@@ -54,7 +54,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+  const templateVars = { urls: urlDatabase, user: users, user_id: req.cookies["user_id"]};
   res.render("urls_registration", templateVars);
 });
 
@@ -90,7 +90,7 @@ app.post("/login", (req, res) => {
 
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
