@@ -51,12 +51,12 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
-// app.get("/login", (req, res) => {
-//   //console.log(req.params.shortURL);
-//   const username = req.cookies["username"];
-//   console.log("username is",username);
-//   res.render("_header",{username : username});
-// });
+app.get("/register", (req, res) => {
+  const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+  res.render("urls_registration", templateVars);
+});
+
+
 
 app.post("/urls", (req, res) => {
   let longURL = req.body.longURL;
@@ -81,7 +81,7 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 app.post("/login", (req, res) => {
   //console.log(req.params.shortURL);
   const username = req.body.username;
-  console.log(username);
+  //console.log(username);
   res.cookie("username",username);
   res.redirect("/urls");
 });
@@ -92,6 +92,9 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
+app.post("/register", (req, res) => {
+  console.log(req.body);
+});
 
 
 
