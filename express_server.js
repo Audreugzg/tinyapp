@@ -21,7 +21,7 @@ function generateRandomString() {
 const checkExistEmail = function (obj,email) {
   for (const key in obj) {
     if (obj[key].email === email) {
-      return true;
+      return key;
       
     }
   }
@@ -35,7 +35,13 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const users = {};
+const users = {
+  "a1b2": {
+    id: "a1b2", 
+    email: "user@ex.com", 
+    password: "12345"
+  },
+};
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -101,9 +107,17 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 app.post("/login", (req, res) => {
   //console.log(req.params.shortURL);
-  const username = req.body.username;
+  const email = req.body.email;
+  const password = req.body.password;
   //console.log(username);
-  res.cookie("username",username);
+  if(!checkExistEmail(users,email)){
+    return res.status(403).send("Account does not exist, please register first.");
+  }
+  let id = checkExistEmail(users,email);
+  if(users[id].password !== password){
+    return res.status(403).send("Incorrect Password, please try again.");
+  }
+  res.cookie("user_id",id);
   res.redirect("/urls");
 });
 
