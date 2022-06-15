@@ -70,6 +70,13 @@ app.get("/register", (req, res) => {
   res.render("urls_registration", templateVars);
 });
 
+app.get("/login", (req, res) => {
+  const templateVars = { urls: urlDatabase, user: users, user_id: req.cookies["user_id"]};
+  res.render("urls_login", templateVars);
+});
+
+
+
 
 
 app.post("/urls", (req, res) => {
@@ -108,6 +115,7 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   const id = generateRandomString();
+  console.log(req.body);
   const email = req.body.email;
   const password = req.body.password;
 
