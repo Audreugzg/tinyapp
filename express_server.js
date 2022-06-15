@@ -18,6 +18,18 @@ function generateRandomString() {
 
 }
 
+const checkExistEmail = function (obj,email) {
+  for (const key in obj) {
+    if (obj[key].email === email) {
+      return true;
+      
+    }
+  }
+  return false;
+
+}
+
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -96,10 +108,20 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   const id = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if(checkExistEmail(users,email)){
+    return res.status(400).send("Error found: The email alredy exist.");
+  }
+  if(!email || !password){
+    return res.status(400).send("Both email and password are madatory, please try again.");
+  }
+
   users[id] = {
     id: id, 
-    email: req.body.email, 
-    password: req.body.password
+    email: email, 
+    password: password
   };
   res.cookie("user_id",id);
   res.redirect("/urls");
