@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-
+const{generateRandomString, checkExistEmail, urlsForUser} = require("./helpers");
 
 //set ejs as the view engine
 app.set("view engine", "ejs");
@@ -19,34 +19,6 @@ app.use(cookieSession({
 }))
 
 const bcrypt = require('bcryptjs');
-
-function generateRandomString() {
-  const result = Math.random().toString(36).substring(2, 8);
-  return result;
-
-};
-
-const checkExistEmail = function (obj, email) {
-  for (const key in obj) {
-    if (obj[key].email === email) {
-      return key;
-
-    }
-  }
-  return false;
-
-};
-
-const urlsForUser = function (id) {
-  let UrlsForUser = {};
-  for (const key in urlDatabase) {
-    if (urlDatabase[key].userID === id) {
-      UrlsForUser[key] = urlDatabase[key];
-    }
-  }
-  return UrlsForUser;
-
-};
 
 
 // const urlDatabase = {
@@ -78,12 +50,12 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  if (!req.session.user_id) {
-    const templateVars = { user: users, user_id: req.session.user_id }
+  if (!req.session.user_id || !users[req.session.user_id]) {
+    const templateVars = { user: users, user_id: false }
     res.render("urls_notLogin", templateVars);
 
   } else {
-    const UrlForUser = urlsForUser(req.session.user_id);
+    const UrlForUser = urlsForUser(req.session.user_id,urlDatabase);
     //console.log("url for user:", UrlForUser);
     const templateVars = { urls: UrlForUser, user: users, user_id: req.session.user_id }
     res.render("urls_index", templateVars);
@@ -93,7 +65,7 @@ app.get("/urls", (req, res) => {
 //Make sure to place this code above the app.get("/urls/:id", ...) route definition
 app.get("/urls/new", (req, res) => {
   console.log("user_id_1",req.session.user_id );
-  if (!req.session.user_id ) {
+  if (!req.session.user_id || !users[req.session.user_id] ) {
     //res.status(403).send("Account does not exist, please register first.");
     res.redirect("/login",403);
 
@@ -105,12 +77,12 @@ app.get("/urls/new", (req, res) => {
 
 
 app.get("/urls/:shortURL", (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.user_id || !users[req.session.user_id]) {
     const templateVars = { user: users, user_id: false }
     res.render("urls_notLogin", templateVars);
   }
   const shortURL = req.params.shortURL;
-  const UrlForUser = urlsForUser(req.session.user_id);
+  const UrlForUser = urlsForUser(req.session.user_id,urlDatabase);
   if(!UrlForUser[shortURL]){
     const templateVars = { user: users, user_id: false }
     res.render("urls_notAllowed", templateVars);
@@ -127,12 +99,12 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: users, user_id: req.session.user_id };
+  const templateVars = { urls: urlDatabase, user: users, user_id: false };
   res.render("urls_registration", templateVars);
 });
 
 app.get("/login", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: users, user_id: req.session.user_id };
+  const templateVars = { urls: urlDatabase, user: users, user_id: false };
   res.render("urls_login", templateVars);
 });
 
@@ -142,7 +114,7 @@ app.get("/login", (req, res) => {
 
 app.post("/urls", (req, res) => {
   //console.log(req.cookies.user_id);
-  if (!req.session.user_id) {
+  if (!req.session.user_id || !users[req.session.user_id]) {
     //res.status(403).send("Account does not exist, please register first.");
     res.redirect("/login",403);
 
@@ -165,13 +137,13 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.user_id || !users[req.session.user_id]) {
     //const templateVars = { user: users, user_id: req.cookies["user_id"] }
     //res.render("urls_notLogin", templateVars);
     res.redirect(403,"/login");
   }
   const shortURL = req.params.shortURL;
-  const UrlForUser = urlsForUser(req.session.user_id);
+  const UrlForUser = urlsForUser(req.session.user_id,urlDatabase);
   //console.log(UrlForUser);
   //console.log(users);
   if(!UrlForUser[shortURL]){
@@ -185,7 +157,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.user_id || !users[req.session.user_id]) {
     //const templateVars = { user: users, user_id: req.cookies["user_id"] }
     //res.render("urls_notLogin", templateVars);
     res.redirect(403,"/login");
