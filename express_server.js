@@ -12,6 +12,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
+const bcrypt = require('bcryptjs');
+
 function generateRandomString() {
   const result = Math.random().toString(36).substring(2, 8);
   return result;
@@ -61,7 +63,7 @@ const users = {
   "aJ48lW": {
     id: "aJ48lW",
     email: "user@ex.com",
-    password: "12345"
+    password: "$2a$10$kBHJ9rwUaVae62jv9r9WQuebynu2DWZA9nFYFS1Lg3A.j.9eui/m2"
   },
 };
 
@@ -162,8 +164,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
   const shortURL = req.params.shortURL;
   const UrlForUser = urlsForUser(req.cookies["user_id"]);
-  console.log(UrlForUser);
-  console.log(users);
+  //console.log(UrlForUser);
+  //console.log(users);
   if(!UrlForUser[shortURL]){
     const templateVars = { user: users, user_id: false }
     res.render("urls_notAllowed", templateVars);
@@ -195,7 +197,8 @@ app.post("/login", (req, res) => {
     return res.status(403).send("Account does not exist, please register first.");
   }
   let id = checkExistEmail(users, email);
-  if (users[id].password !== password) {
+  console.log(bcrypt.compareSync(password, users[id].password));
+  if (!bcrypt.compareSync(password, users[id].password)) {
     return res.status(403).send("Incorrect Password, please try again.");
   }
   res.cookie("user_id", id);
@@ -210,9 +213,10 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   const id = generateRandomString();
-  console.log(req.body);
+  //console.log(req.body);
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
 
   if (checkExistEmail(users, email)) {
     return res.status(400).send("Error found: The email alredy exist.");
@@ -224,11 +228,11 @@ app.post("/register", (req, res) => {
   users[id] = {
     id: id,
     email: email,
-    password: password
+    password: hashedPassword
   };
   res.cookie("user_id", id);
   res.redirect("/urls");
-  //console.log(users);
+  console.log(users);
 });
 
 
