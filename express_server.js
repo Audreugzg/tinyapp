@@ -16,7 +16,7 @@ function generateRandomString() {
   const result = Math.random().toString(36).substring(2, 8);
   return result;
 
-}
+};
 
 const checkExistEmail = function (obj, email) {
   for (const key in obj) {
@@ -27,7 +27,18 @@ const checkExistEmail = function (obj, email) {
   }
   return false;
 
-}
+};
+
+const urlsForUser = function (id) {
+  let UrlsForUser = {};
+  for (const key in urlDatabase) {
+    if (urlDatabase[key].userID === id) {
+      UrlsForUser[key] = urlDatabase[key];
+    }
+  }
+  return UrlsForUser;
+
+};
 
 
 // const urlDatabase = {
@@ -37,18 +48,18 @@ const checkExistEmail = function (obj, email) {
 
 const urlDatabase = {
   b6UTxQ: {
-        longURL: "https://www.tsn.ca",
-        userID: "aJ48lW"
-    },
-    i3BoGr: {
-        longURL: "https://www.google.ca",
-        userID: "aJ48lW"
-    }
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW"
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW"
+  }
 };
 
 const users = {
-  "a1b2": {
-    id: "a1b2",
+  "aJ48lW": {
+    id: "aJ48lW",
     email: "user@ex.com",
     password: "12345"
   },
@@ -59,8 +70,17 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: users, user_id: req.cookies["user_id"] }
-  res.render("urls_index", templateVars);
+  if (!req.cookies["user_id"]) {
+    const templateVars = { user: users, user_id: req.cookies["user_id"] }
+    res.render("urls_notLogin", templateVars);
+
+  } else {
+    const UrlForUser = urlsForUser(req.cookies["user_id"]);
+    //console.log("url for user:", UrlForUser);
+    const templateVars = { urls: UrlForUser, user: users, user_id: req.cookies["user_id"] }
+    res.render("urls_index", templateVars);
+  }
+
 });
 //Make sure to place this code above the app.get("/urls/:id", ...) route definition
 app.get("/urls/new", (req, res) => {
@@ -70,9 +90,18 @@ app.get("/urls/new", (req, res) => {
 
 
 app.get("/urls/:shortURL", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    const templateVars = { user: users, user_id: req.cookies["user_id"] }
+    res.render("urls_notLogin", templateVars);
+  }
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL].longURL;
-  const templateVars = { shortURL: shortURL, longURL: longURL, urls: urlDatabase, user: users, user_id: req.cookies["user_id"] };
+  const UrlForUser = urlsForUser(req.cookies["user_id"]);
+  if(!UrlForUser[shortURL]){
+    const templateVars = { user: users, user_id: req.cookies["user_id"] }
+    res.render("urls_notAllowed", templateVars);
+  }
+  const longURL = UrlForUser[shortURL].longURL;
+  const templateVars = { shortURL: shortURL, longURL: longURL, urls: UrlForUser, user: users, user_id: req.cookies["user_id"] };
   res.render("urls_show", templateVars);
 });
 
@@ -100,7 +129,7 @@ app.post("/urls", (req, res) => {
   //console.log(req.cookies.user_id);
   if (!req.cookies.user_id) {
     res.redirect("/login");
-    
+
   } else {
     const longURL = req.body.longURL;
     //console.log(longURL);
@@ -120,9 +149,20 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    const templateVars = { user: users, user_id: req.cookies["user_id"] }
+    res.render("urls_notLogin", templateVars);
+  }
   const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
-  res.redirect("/urls/");
+  const UrlForUser = urlsForUser(req.cookies["user_id"]);
+  if(!UrlForUser[shortURL]){
+    const templateVars = { user: users, user_id: req.cookies["user_id"] }
+    res.render("urls_notAllowed", templateVars);
+  }else{
+    delete urlDatabase[shortURL];
+    res.redirect("/urls/");
+  }
+ 
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
