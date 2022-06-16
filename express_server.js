@@ -1,31 +1,13 @@
 const express = require("express");
 const app = express();
-const PORT = 8080; // default port 8080
 const{generateRandomString, checkExistEmail, urlsForUser} = require("./helpers");
-
-//set ejs as the view engine
-app.set("view engine", "ejs");
-
 const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({ extended: true }));
-
-//const cookieParser = require('cookie-parser');
-//app.use(cookieParser());
-
 const cookieSession = require('cookie-session');
-app.use(cookieSession({
-  name: 'session',
-  keys: ["tinyapp"],
-}))
-
 const bcrypt = require('bcryptjs');
 
+const PORT = 8080; // default port 8080
 
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
-
+//database
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
@@ -36,7 +18,6 @@ const urlDatabase = {
     userID: "aJ48lW"
   }
 };
-
 const users = {
   "aJ48lW": {
     id: "aJ48lW",
@@ -45,8 +26,18 @@ const users = {
   },
 };
 
+//set ejs as the view engine
+//Middleware
+app.set("view engine", "ejs");
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieSession({
+  name: 'session',
+  keys: ["tinyapp"],
+}))
+
+///////////get route
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect("/login");
 });
 
 app.get("/urls", (req, res) => {
@@ -56,21 +47,17 @@ app.get("/urls", (req, res) => {
 
   } else {
     const UrlForUser = urlsForUser(req.session.user_id,urlDatabase);
-    //console.log("url for user:", UrlForUser);
     const templateVars = { urls: UrlForUser, user: users, user_id: req.session.user_id }
     res.render("urls_index", templateVars);
   }
 
 });
-//Make sure to place this code above the app.get("/urls/:id", ...) route definition
+
 app.get("/urls/new", (req, res) => {
-  console.log("user_id_1",req.session.user_id );
   if (!req.session.user_id || !users[req.session.user_id] ) {
-    //res.status(403).send("Account does not exist, please register first.");
     res.redirect("/login",403);
 
   }
-  console.log("user_id",req.session.user_id );
   const templateVars = { urls: urlDatabase, user: users, user_id: req.session.user_id };
   res.render("urls_new", templateVars);
 });
@@ -110,26 +97,22 @@ app.get("/login", (req, res) => {
 
 
 
-
+/////////post route
 
 app.post("/urls", (req, res) => {
-  //console.log(req.cookies.user_id);
+  
   if (!req.session.user_id || !users[req.session.user_id]) {
-    //res.status(403).send("Account does not exist, please register first.");
+    
     res.redirect("/login",403);
 
   } else {
     const longURL = req.body.longURL;
-    //console.log(longURL);
+    
     const shortURL = generateRandomString();
-    // urlDatabase[shortURL].longURL = longURL;
-    // urlDatabase[shortURL].userID = req.cookies.user_id;
     urlDatabase[shortURL] = {
       longURL: longURL,
       userID: req.session.user_id
     }
-    //console.log(urlDatabase);
-    //console.log(users);
     res.redirect(`/urls/${shortURL}`);
 
   }
@@ -138,14 +121,11 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!req.session.user_id || !users[req.session.user_id]) {
-    //const templateVars = { user: users, user_id: req.cookies["user_id"] }
-    //res.render("urls_notLogin", templateVars);
     res.redirect(403,"/login");
   }
   const shortURL = req.params.shortURL;
   const UrlForUser = urlsForUser(req.session.user_id,urlDatabase);
-  //console.log(UrlForUser);
-  //console.log(users);
+ 
   if(!UrlForUser[shortURL]){
     const templateVars = { user: users, user_id: false }
     res.render("urls_notAllowed", templateVars);
@@ -158,45 +138,35 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:shortURL/edit", (req, res) => {
   if (!req.session.user_id || !users[req.session.user_id]) {
-    //const templateVars = { user: users, user_id: req.cookies["user_id"] }
-    //res.render("urls_notLogin", templateVars);
     res.redirect(403,"/login");
   }
-  //console.log(req.params.shortURL);
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL].longURL = req.body.newURL;
   res.redirect("/urls/");
 });
 
 app.post("/login", (req, res) => {
-  //console.log(req.params.shortURL);
   const email = req.body.email;
   const password = req.body.password;
-  //console.log(username);
   if (!checkExistEmail(users, email)) {
     return res.status(403).send("Account does not exist, please register first.");
   }
   let id = checkExistEmail(users, email);
-  console.log(bcrypt.compareSync(password, users[id].password));
   if (!bcrypt.compareSync(password, users[id].password)) {
     return res.status(403).send("Incorrect Password, please try again.");
   }
-  //res.cookie("user_id", id);
   req.session.user_id = id;
-  console.log(req.session.user_id);
   res.redirect("/urls");
 });
 
 
 app.post("/logout", (req, res) => {
-  //res.clearCookie("user_id");
   req.session = null;
   res.redirect("/urls");
 });
 
 app.post("/register", (req, res) => {
   const id = generateRandomString();
-  //console.log(req.body);
   const email = req.body.email;
   const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -213,10 +183,8 @@ app.post("/register", (req, res) => {
     email: email,
     password: hashedPassword
   };
-  //res.cookie("user_id", id);
   req.session.user_id = id;
   res.redirect("/urls");
-  console.log(users);
 });
 
 
