@@ -84,6 +84,11 @@ app.get("/urls", (req, res) => {
 });
 //Make sure to place this code above the app.get("/urls/:id", ...) route definition
 app.get("/urls/new", (req, res) => {
+  if (!req.cookies.user_id) {
+    //res.status(403).send("Account does not exist, please register first.");
+    res.redirect("/login",403);
+
+  }
   const templateVars = { urls: urlDatabase, user: users, user_id: req.cookies["user_id"] };
   res.render("urls_new", templateVars);
 });
@@ -97,7 +102,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const UrlForUser = urlsForUser(req.cookies["user_id"]);
   if(!UrlForUser[shortURL]){
-    const templateVars = { user: users, user_id: req.cookies["user_id"] }
+    const templateVars = { user: users, user_id: false }
     res.render("urls_notAllowed", templateVars);
   }
   const longURL = UrlForUser[shortURL].longURL;
@@ -128,7 +133,8 @@ app.get("/login", (req, res) => {
 app.post("/urls", (req, res) => {
   //console.log(req.cookies.user_id);
   if (!req.cookies.user_id) {
-    res.redirect("/login");
+    //res.status(403).send("Account does not exist, please register first.");
+    res.redirect("/login",403);
 
   } else {
     const longURL = req.body.longURL;
@@ -150,13 +156,16 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!req.cookies["user_id"]) {
-    const templateVars = { user: users, user_id: req.cookies["user_id"] }
-    res.render("urls_notLogin", templateVars);
+    //const templateVars = { user: users, user_id: req.cookies["user_id"] }
+    //res.render("urls_notLogin", templateVars);
+    res.redirect(403,"/login");
   }
   const shortURL = req.params.shortURL;
   const UrlForUser = urlsForUser(req.cookies["user_id"]);
+  console.log(UrlForUser);
+  console.log(users);
   if(!UrlForUser[shortURL]){
-    const templateVars = { user: users, user_id: req.cookies["user_id"] }
+    const templateVars = { user: users, user_id: false }
     res.render("urls_notAllowed", templateVars);
   }else{
     delete urlDatabase[shortURL];
@@ -166,6 +175,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    //const templateVars = { user: users, user_id: req.cookies["user_id"] }
+    //res.render("urls_notLogin", templateVars);
+    res.redirect(403,"/login");
+  }
   //console.log(req.params.shortURL);
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL].longURL = req.body.newURL;
