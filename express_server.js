@@ -61,7 +61,7 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
-  const templateVars = { urls: urlDatabase, user: users, user_id: req.cookies["user_id"]};
+  const templateVars = { shortURL: shortURL, longURL: longURL,urls: urlDatabase, user: users, user_id: req.cookies["user_id"]};
   res.render("urls_show", templateVars);
 });
 
